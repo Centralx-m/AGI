@@ -1,0 +1,32 @@
+# =============================================
+# UNLIMITED AUTONOMOUS AI AGENT - REQUIREMENTS
+# =============================================
+
+# Core
+numpy>=1.24.0
+pandas>=2.0.0
+torch>=2.0.0
+
+# NLP and Machine Learning
+transformers>=4.30.0
+sentence-transformers>=2.2.0
+scikit-learn>=1.2.0
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0
+tqdm>=4.65.0
+
+# Book Reading
+pypdf2>=3.0.0
+pymupdf>=1.23.0
+langchain>=0.0.300
+
+# Advanced
+gymnasium>=0.29.0
+stable-baselines3>=2.0.0
+
+# Development
+black>=23.0.0
+pylint>=2.17.0
+pytest>=7.0.0
