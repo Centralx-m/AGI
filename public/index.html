@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlimited AI Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            max-width: 900px;
+            padding: 40px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        h1 { font-size: 3rem; margin-bottom: 10px; }
+        h1 .icon { font-size: 3.5rem; }
+        .subtitle { color: #888; font-size: 1.2rem; margin-bottom: 20px; }
+        .domain { color: #00cc88; font-size: 1rem; margin-bottom: 30px; }
+        .status { 
+            display: inline-block;
+            padding: 8px 20px;
+            background: #00cc88;
+            color: #000;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .card .value { font-size: 2rem; font-weight: bold; color: #00cc88; }
+        .card .label { color: #888; font-size: 0.9rem; margin-top: 5px; }
+        .endpoints {
+            text-align: left;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .endpoints .item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .endpoints .method {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .method.get { background: #00cc88; color: #000; }
+        .method.post { background: #ffaa00; color: #000; }
+        .endpoints .path { color: #00cc88; }
+        .footer { margin-top: 30px; color: #555; font-size: 0.8rem; }
+        .footer a { color: #00cc88; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="icon">🤖</span><br>Unlimited AI Agent</h1>
+        <p class="subtitle">Powered by TAAGC | Deployed on Vercel</p>
+        <p class="domain">🌐 <a href="https://ai.taagc.site" style="color:#00cc88;text-decoration:none;">ai.taagc.site</a></p>
+        <div class="status">● Online & Running</div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="value">14</div>
+                <div class="label">Domains</div>
+            </div>
+            <div class="card">
+                <div class="value">∞</div>
+                <div class="label">Capabilities</div>
+            </div>
+            <div class="card">
+                <div class="value">✓</div>
+                <div class="label">Self-Learning</div>
+            </div>
+        </div>
+
+        <h2 style="color:#00cc88;margin:20px 0;">📡 API Endpoints</h2>
+        <div class="endpoints">
+            <div class="item">
+                <span class="method get">GET</span>
+                <span class="path">/api/status</span>
+                <span style="color:#888;">— Get agent status</span>
+            </div>
+            <div class="item">
+                <span class="method post">POST</span>
+                <span class="path">/api/task</span>
+                <span style="color:#888;">— Process a task</span>
+            </div>
+            <div class="item">
+                <span class="method get">GET</span>
+                <span class="path">/api/tasks</span>
+                <span style="color:#888;">— List all tasks</span>
+            </div>
+            <div class="item">
+                <span class="method post">POST</span>
+                <span class="path">/api/create_bot</span>
+                <span style="color:#888;">— Create a new bot</span>
+            </div>
+            <div class="item">
+                <span class="method post">POST</span>
+                <span class="path">/api/learn</span>
+                <span style="color:#888;">— Learn from text</span>
+            </div>
+            <div class="item">
+                <span class="method post">POST</span>
+                <span class="path">/api/replicate</span>
+                <span style="color:#888;">— Replicate the agent</span>
+            </div>
+        </div>
+
+        <div style="margin-top:20px;display:flex;flex-direction:column;align-items:center;">
+            <h2 style="color:#00cc88;margin:10px 0;">🚀 Quick Test</h2>
+            <div style="width:100%;max-width:500px;">
+                <textarea id="testTask" rows="3" style="width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:1rem;resize:vertical;" placeholder="Enter a task..."></textarea>
+                <button onclick="processTask()" style="margin-top:10px;padding:12px 24px;border:none;border-radius:8px;background:#00cc88;color:#000;font-weight:bold;cursor:pointer;width:100%;font-size:1rem;">▶ Process Task</button>
+                <div id="result" style="margin-top:15px;padding:15px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);white-space:pre-wrap;font-family:monospace;font-size:0.85rem;max-height:200px;overflow-y:auto;display:none;"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🤖 Unlimited Autonomous AI Agent — Any Task, Any Domain</p>
+            <p><a href="https://ai.taagc.site">ai.taagc.site</a> | &copy; 2026 TAAGC</p>
+        </div>
+    </div>
+
+    <script>
+        async function processTask() {
+            const input = document.getElementById('testTask');
+            const result = document.getElementById('result');
+            const task = input.value.trim();
+            
+            if (!task) {
+                result.style.display = 'block';
+                result.innerHTML = '❌ Please enter a task';
+                return;
+            }
+            
+            result.style.display = 'block';
+            result.innerHTML = '⏳ Processing...';
+            
+            try {
+                const response = await fetch('/api/task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    result.innerHTML = `✅ Success!\n\n${JSON.stringify(data.result, null, 2)}`;
+                } else {
+                    result.innerHTML = `❌ Error: ${data.message}`;
+                }
+            } catch (error) {
+                result.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
