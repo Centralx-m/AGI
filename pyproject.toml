@@ -1,12 +1,8 @@
 [project]
 name = "unlimited-ai-agent"
 version = "1.0.0"
-description = "Unlimited Autonomous AI Agent - Any Task, Any Domain"
 requires-python = ">=3.9"
-dependencies = [
-    "fastapi>=0.117.1",
-    "uvicorn>=0.23.0",
-]
+dependencies = []
 
 [tool.vercel]
 entrypoint = "api.index:handler"
