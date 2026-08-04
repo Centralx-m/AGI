@@ -1,16 +1,31 @@
-"""Core Memory & Knowledge Base"""
+"""
+Core Memory System - The AI's Knowledge Storage
+===============================================
+
+This module handles all memory operations for the AI agent:
+- Knowledge Graph: Stores concepts and their relationships
+- Neural Memory: Vector-based storage for semantic recall
+- Experience Database: Tracks successes and failures
+- Core Memory: Orchestrates all memory systems together
+"""
+
 import json
-import pickle
 import hashlib
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Tuple
 import numpy as np
 
+
 class KnowledgeGraph:
-    """Knowledge Graph for storing concepts and relationships"""
+    """
+    Knowledge Graph - Stores concepts and their relationships
     
-    def __init__(self, storage_path='knowledge/knowledge_graph.json'):
+    Creates a network of interconnected ideas. When the AI learns
+    a new concept, it stores it here and connects it to related concepts.
+    """
+    
+    def __init__(self, storage_path: str = 'knowledge/knowledge_graph.json'):
         self.storage_path = Path(storage_path)
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self.graph = self._load()
@@ -25,50 +40,52 @@ class KnowledgeGraph:
         with open(self.storage_path, 'w') as f:
             json.dump(self.graph, f, indent=2)
     
-    def add_concept(self, name: str, category: str, description: str, source: Optional[str] = None) -> bool:
-        """Add a new concept"""
-        if name not in self.graph['concepts']:
-            self.graph['concepts'][name] = {
-                'category': category,
-                'description': description,
-                'source': source,
-                'added': datetime.now().isoformat(),
-                'connections': []
-            }
-            self.graph['nodes'].append(name)
-            self._save()
-            return True
-        return False
+    def add_concept(self, name: str, category: str, description: str, 
+                    source: Optional[str] = None) -> bool:
+        if name in self.graph['concepts']:
+            return False
+        
+        self.graph['concepts'][name] = {
+            'category': category,
+            'description': description,
+            'source': source,
+            'added': datetime.now().isoformat(),
+            'connections': []
+        }
+        self.graph['nodes'].append(name)
+        self._save()
+        return True
     
     def add_relation(self, concept1: str, concept2: str, relation_type: str) -> bool:
-        """Add a relationship between concepts"""
-        if concept1 in self.graph['concepts'] and concept2 in self.graph['concepts']:
-            self.graph['edges'].append({
-                'source': concept1,
-                'target': concept2,
-                'type': relation_type
-            })
-            self.graph['concepts'][concept1]['connections'].append({
-                'to': concept2,
-                'type': relation_type
-            })
-            self._save()
-            return True
-        return False
+        if concept1 not in self.graph['concepts'] or concept2 not in self.graph['concepts']:
+            return False
+        
+        self.graph['edges'].append({
+            'source': concept1,
+            'target': concept2,
+            'type': relation_type
+        })
+        self.graph['concepts'][concept1]['connections'].append({
+            'to': concept2,
+            'type': relation_type
+        })
+        self._save()
+        return True
     
     def get_related(self, concept: str, max_distance: int = 2) -> List[str]:
-        """Find related concepts"""
         related = set()
-        if concept in self.graph['concepts']:
-            for conn in self.graph['concepts'][concept]['connections']:
-                related.add(conn['to'])
-                if max_distance >= 2:
-                    for sub_conn in self.graph['concepts'].get(conn['to'], {}).get('connections', []):
-                        related.add(sub_conn['to'])
+        if concept not in self.graph['concepts']:
+            return []
+        
+        for conn in self.graph['concepts'][concept]['connections']:
+            related.add(conn['to'])
+            if max_distance >= 2:
+                for sub_conn in self.graph['concepts'].get(conn['to'], {}).get('connections', []):
+                    related.add(sub_conn['to'])
+        
         return list(related)
     
     def get_summary(self) -> Dict:
-        """Get knowledge graph summary"""
         return {
             'total_concepts': len(self.graph['concepts']),
             'total_edges': len(self.graph['edges']),
@@ -77,46 +94,39 @@ class KnowledgeGraph:
 
 
 class NeuralMemory:
-    """Neural Memory - Vector database for storing learned information"""
+    """Neural Memory - Vector-based semantic memory"""
     
-    def __init__(self, storage_path='knowledge/memory.db'):
+    def __init__(self, storage_path: str = 'knowledge/memory.db'):
         self.storage_path = Path(storage_path)
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Use simple dictionary for memory (no external dependencies)
         self.memory = {
             'experiences': [],
             'knowledge': [],
             'patterns': [],
             'embeddings': {}
         }
-        
         self._load()
     
     def _load(self):
-        """Load memory from disk"""
         memory_file = self.storage_path / 'memory.json'
         if memory_file.exists():
             with open(memory_file, 'r') as f:
                 self.memory = json.load(f)
     
     def _save(self):
-        """Save memory to disk"""
         with open(self.storage_path / 'memory.json', 'w') as f:
             json.dump(self.memory, f, indent=2)
     
     def _get_embedding(self, text: str) -> List[float]:
-        """Simple embedding function (hash-based)"""
-        import hashlib
+        """Simple hash-based embedding"""
         hash_obj = hashlib.sha256(text.encode())
         hash_bytes = hash_obj.digest()
         embedding = np.frombuffer(hash_bytes[:64], dtype=np.uint8).astype(np.float32)
-        embedding = embedding / 255.0  # Normalize to 0-1
-        embedding = embedding * 2 - 1  # Normalize to -1 to 1
+        embedding = embedding / 255.0 * 2 - 1
         return embedding.tolist()
     
     def store_experience(self, experience: str, metadata: Optional[Dict] = None) -> str:
-        """Store an experience"""
         doc_id = f"exp_{datetime.now().timestamp()}"
         embedding = self._get_embedding(experience)
         
@@ -127,14 +137,12 @@ class NeuralMemory:
             'metadata': metadata or {},
             'timestamp': datetime.now().isoformat()
         }
-        
         self.memory['experiences'].append(entry)
         self.memory['embeddings'][doc_id] = embedding
         self._save()
         return doc_id
     
     def store_knowledge(self, text: str, category: str, source: Optional[str] = None) -> str:
-        """Store knowledge"""
         doc_id = f"know_{datetime.now().timestamp()}"
         embedding = self._get_embedding(text)
         
@@ -146,36 +154,29 @@ class NeuralMemory:
             'source': source,
             'timestamp': datetime.now().isoformat()
         }
-        
         self.memory['knowledge'].append(entry)
         self.memory['embeddings'][doc_id] = embedding
         self._save()
         return doc_id
     
-    def recall_similar(self, query: str, top_n: int = 5, collection: str = 'knowledge') -> List[Dict]:
-        """Recall similar items"""
+    def recall_similar(self, query: str, top_n: int = 5, 
+                       collection: str = 'knowledge') -> List[Dict]:
         query_embedding = self._get_embedding(query)
-        
-        # Get items from collection
         items = self.memory.get(collection, [])
         
-        # Compute similarity scores
         scored_items = []
         for item in items:
             item_embedding = item.get('embedding', [])
             if item_embedding:
-                # Cosine similarity
                 similarity = np.dot(query_embedding, item_embedding) / (
                     np.linalg.norm(query_embedding) * np.linalg.norm(item_embedding) + 1e-8
                 )
                 scored_items.append((similarity, item))
         
-        # Sort by similarity and return top_n
         scored_items.sort(key=lambda x: x[0], reverse=True)
         return [item for _, item in scored_items[:top_n]]
     
     def get_summary(self) -> Dict:
-        """Get memory summary"""
         return {
             'total_experiences': len(self.memory['experiences']),
             'total_knowledge': len(self.memory['knowledge']),
@@ -184,9 +185,9 @@ class NeuralMemory:
 
 
 class ExperienceDatabase:
-    """Database for storing all experiences - successes and failures"""
+    """Experience Database - Tracks successes and failures"""
     
-    def __init__(self, storage_path='knowledge/experiences.json'):
+    def __init__(self, storage_path: str = 'knowledge/experiences.json'):
         self.storage_path = Path(storage_path)
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self.data = self._load()
@@ -201,8 +202,8 @@ class ExperienceDatabase:
         with open(self.storage_path, 'w') as f:
             json.dump(self.data, f, indent=2)
     
-    def add_experience(self, action: str, result: str, context: str, success: bool) -> Dict:
-        """Add a new experience"""
+    def add_experience(self, action: str, result: str, context: str, 
+                       success: bool) -> Dict:
         experience = {
             'id': len(self.data['all']) + 1,
             'action': action,
@@ -211,18 +212,15 @@ class ExperienceDatabase:
             'success': success,
             'timestamp': datetime.now().isoformat()
         }
-        
         self.data['all'].append(experience)
         if success:
             self.data['successes'].append(experience)
         else:
             self.data['failures'].append(experience)
-        
         self._save()
         return experience
     
     def get_lessons(self, limit: int = 20) -> List[Dict]:
-        """Extract lessons from failures"""
         lessons = []
         for failure in self.data['failures'][-limit:]:
             lessons.append({
@@ -233,7 +231,6 @@ class ExperienceDatabase:
         return lessons
     
     def get_best_practices(self, limit: int = 20) -> List[Dict]:
-        """Extract best practices from successes"""
         practices = []
         for success in self.data['successes'][-limit:]:
             practices.append({
@@ -244,39 +241,38 @@ class ExperienceDatabase:
         return practices
     
     def get_summary(self) -> Dict:
-        """Get experience summary"""
+        total = len(self.data['all'])
+        successes = len(self.data['successes'])
+        failures = len(self.data['failures'])
         return {
-            'total': len(self.data['all']),
-            'successes': len(self.data['successes']),
-            'failures': len(self.data['failures']),
-            'success_rate': len(self.data['successes']) / max(1, len(self.data['all']))
+            'total': total,
+            'successes': successes,
+            'failures': failures,
+            'success_rate': successes / max(1, total)
         }
 
 
 class CoreMemory:
-    """Core Memory - Combines all memory systems"""
+    """Core Memory - Orchestrates all memory systems"""
     
     def __init__(self):
         self.knowledge_graph = KnowledgeGraph()
         self.neural_memory = NeuralMemory()
         self.experience_db = ExperienceDatabase()
-        print("🧠 Core Memory initialized")
     
-    def learn_from_text(self, text: str, category: str, source: Optional[str] = None) -> bool:
-        """Learn from text"""
+    def learn_from_text(self, text: str, category: str, 
+                        source: Optional[str] = None) -> bool:
         self.neural_memory.store_knowledge(text, category, source)
         return True
     
     def remember(self, query: str, top_n: int = 5) -> List[Dict]:
-        """Recall relevant knowledge"""
         return self.neural_memory.recall_similar(query, top_n)
     
-    def add_experience(self, action: str, result: str, context: str, success: bool) -> Dict:
-        """Add an experience"""
+    def add_experience(self, action: str, result: str, context: str, 
+                       success: bool) -> Dict:
         return self.experience_db.add_experience(action, result, context, success)
     
     def get_summary(self) -> Dict:
-        """Get memory summary"""
         return {
             'knowledge_graph': self.knowledge_graph.get_summary(),
             'neural_memory': self.neural_memory.get_summary(),
