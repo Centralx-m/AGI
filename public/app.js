@@ -28,12 +28,17 @@ async function loadStats() {
         const data = await response.json();
         
         if (data.status === 'success') {
-            const agent = data.agent;
-            document.getElementById('statTasks').textContent = agent.brain_status?.tasks_executed || 0;
-            document.getElementById('statDomains').textContent = agent.brain_status?.domains?.length || 14;
-            document.getElementById('statMemory').textContent = agent.memory_status?.knowledge_graph?.total_concepts || 0;
+            const agent = data.agent || {};
             
-            const successRate = agent.memory_status?.experience_db?.success_rate || 0;
+            // Fix: Use correct field names from your backend
+            document.getElementById('statTasks').textContent = agent.tasks_completed || 0;
+            document.getElementById('statDomains').textContent = agent.domains?.length || 14;
+            
+            // Fix: Memory data is nested correctly
+            const memory = agent.memory || {};
+            document.getElementById('statMemory').textContent = memory.knowledge_graph?.total_concepts || 0;
+            
+            const successRate = memory.experience_db?.success_rate || 0;
             document.getElementById('statSuccess').textContent = (successRate * 100).toFixed(1) + '%';
         }
     } catch (error) {
@@ -51,7 +56,7 @@ async function loadStatus() {
         const data = await response.json();
         
         if (data.status === 'success') {
-            displayStatus(data.agent);
+            displayStatus(data);
         } else {
             displayError('statusContainer', 'Failed to load status: ' + data.message);
         }
@@ -60,21 +65,22 @@ async function loadStatus() {
     }
 }
 
-function displayStatus(status) {
+function displayStatus(data) {
     const container = document.getElementById('statusContainer');
+    const agent = data.agent || {};
+    const memory = agent.memory || {};
+    
     container.innerHTML = `
         <div class="status-grid">
-            <div><strong>Domain:</strong> ${DOMAIN}</div>
-            <div><strong>State:</strong> ${status.agent_status?.state || 'idle'}</div>
-            <div><strong>Tasks:</strong> ${status.brain_status?.tasks_executed || 0}</div>
-            <div><strong>Domains:</strong> ${status.brain_status?.domains?.length || 0}</div>
-            <div><strong>Concepts:</strong> ${status.memory_status?.knowledge_graph?.total_concepts || 0}</div>
-            <div><strong>Experiences:</strong> ${status.memory_status?.experience_db?.total || 0}</div>
-            <div><strong>Success Rate:</strong> ${(status.memory_status?.experience_db?.success_rate * 100 || 0).toFixed(1)}%</div>
-            <div><strong>Uptime:</strong> ${formatUptime(status.agent_status?.uptime || 0)}</div>
-            <div><strong>Self-Repair:</strong> ${status.system_status?.self_repair || 'active'}</div>
-            <div><strong>Self-Upgrade:</strong> ${status.system_status?.self_upgrade || 'active'}</div>
-            <div><strong>Self-Replicate:</strong> ${status.system_status?.self_replicate || 'active'}</div>
+            <div><strong>Domain:</strong> ${data.domain || DOMAIN}</div>
+            <div><strong>State:</strong> ${agent.state || 'idle'}</div>
+            <div><strong>Tasks:</strong> ${agent.tasks_completed || 0}</div>
+            <div><strong>Domains:</strong> ${agent.domains?.length || 0}</div>
+            <div><strong>Concepts:</strong> ${memory.knowledge_graph?.total_concepts || 0}</div>
+            <div><strong>Experiences:</strong> ${memory.experience_db?.total || 0}</div>
+            <div><strong>Success Rate:</strong> ${(memory.experience_db?.success_rate || 0) * 100}%</div>
+            <div><strong>Uptime:</strong> ${formatUptime(agent.uptime || 0)}</div>
+            <div><strong>Version:</strong> ${agent.version || '1.0.0'}</div>
         </div>
     `;
 }
@@ -126,19 +132,29 @@ function displayTasks(tasks, count) {
         html += `
             <div class="task-item">
                 <div class="task-header">
-                    <span class="task-priority">Priority: ${task.priority}</span>
+                    <span class="task-priority">Priority: ${task.priority || 3}</span>
                     <span class="task-status ${statusClass}">${task.status}</span>
                 </div>
-                <div class="task-description">${task.description}</div>
+                <div class="task-description">${task.description || task.task || 'No description'}</div>
                 <div class="task-meta">
-                    <span>Created: ${new Date(task.created).toLocaleString()}</span>
-                    ${task.completed ? `<span>Completed: ${new Date(task.completed).toLocaleString()}</span>` : ''}
+                    <span>Created: ${formatDate(task.created || task.timestamp)}</span>
+                    ${task.completed ? `<span>Completed: ${formatDate(task.completed)}</span>` : ''}
                 </div>
             </div>
         `;
     });
     
     container.innerHTML = html;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    try {
+        const date = new Date(dateStr);
+        return date.toLocaleString();
+    } catch {
+        return dateStr;
+    }
 }
 
 // ============================================
@@ -170,11 +186,13 @@ async function processTask() {
     
     if (!task) {
         resultDiv.innerHTML = '❌ Please enter a task description';
+        resultDiv.style.display = 'block';
         return;
     }
     
     btn.disabled = true;
     btn.textContent = '⏳ Processing...';
+    resultDiv.style.display = 'block';
     resultDiv.innerHTML = '⏳ Processing task...';
     
     try {
@@ -193,13 +211,14 @@ async function processTask() {
         const data = await response.json();
         
         if (data.status === 'success') {
+            const result = data.result || {};
             resultDiv.innerHTML = `
 ✅ Task processed successfully!
 
 📋 Task: ${task}
-🎯 Result: ${data.result.success ? 'Success' : 'Failed'}
+🎯 Result: ${result.success ? 'Success' : 'Failed'}
 
-${JSON.stringify(data.result, null, 2)}
+${JSON.stringify(result, null, 2)}
             `;
             
             loadStatus();
@@ -229,11 +248,13 @@ async function createBot() {
     
     if (!requirements) {
         resultDiv.innerHTML = '❌ Please enter bot requirements';
+        resultDiv.style.display = 'block';
         return;
     }
     
     btn.disabled = true;
     btn.textContent = '⏳ Creating...';
+    resultDiv.style.display = 'block';
     resultDiv.innerHTML = '⏳ Creating bot...';
     
     try {
@@ -250,12 +271,15 @@ async function createBot() {
         const data = await response.json();
         
         if (data.status === 'success') {
+            const bot = data.bot || {};
             resultDiv.innerHTML = `
 ✅ Bot created successfully!
 
-🤖 Name: ${name || 'Unnamed'}
-📍 Location: ${location}
-${JSON.stringify(data.bot, null, 2)}
+🤖 Name: ${bot.name || 'Unnamed'}
+📍 Location: ${bot.location || 'local'}
+📝 Requirements: ${requirements}
+
+${bot.code ? `📄 Code:\n${bot.code}` : ''}
             `;
             
             loadStatus();
@@ -283,11 +307,13 @@ async function learnText() {
     
     if (!text) {
         resultDiv.innerHTML = '❌ Please enter text to learn';
+        resultDiv.style.display = 'block';
         return;
     }
     
     btn.disabled = true;
     btn.textContent = '⏳ Learning...';
+    resultDiv.style.display = 'block';
     resultDiv.innerHTML = '⏳ Processing text...';
     
     try {
@@ -309,7 +335,7 @@ async function learnText() {
 
 📚 Category: ${data.category}
 📖 Source: ${data.source}
-📝 Learned: ${data.text}
+📝 Learned: ${data.text || text.substring(0, 200) + '...'}
 
 The AI has learned this information and will use it in future tasks.
             `;
