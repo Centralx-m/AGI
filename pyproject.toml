@@ -1,9 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "unlimited-ai-agent"
 version = "2.0.0"
 description = "Unlimited Autonomous AI Agent - Any Task, Any Domain"
+authors = [{name = "TAAGC", email = "admin@taagc.site"}]
+readme = "README.md"
 requires-python = ">=3.9"
 dependencies = []
 
 [tool.vercel]
 entrypoint = "api.index:handler"
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
+line_length = 100
