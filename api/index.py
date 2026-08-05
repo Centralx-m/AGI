@@ -1,238 +1,268 @@
-"""
-Unlimited AI Agent - API Handler
-Deployed at: https://ai.taagc.site
-"""
-
-from http.server import BaseHTTPRequestHandler
-import json
 from datetime import datetime
+import json
 
-class handler(BaseHTTPRequestHandler):
-    """Main API handler"""
-    
-    def do_GET(self):
-        """Handle GET requests"""
-        path = self.path.split('?')[0]
-        print(f"📥 GET {path}")
-        
-        # ============================================
-        # API ROUTES - Return JSON
-        # ============================================
-        if path == '/api/status':
-            self._send_json({
+# ===========================
+# Helper Functions
+# ===========================
+
+def response(data, status=200, content_type="application/json"):
+    return {
+        "statusCode": status,
+        "headers": {
+            "Content-Type": content_type,
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        },
+        "body": json.dumps(data, default=str) if content_type == "application/json" else data
+    }
+
+
+def html():
+    return """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Unlimited AI Agent</title>
+<style>
+body{
+    background:#0f172a;
+    color:white;
+    font-family:Arial;
+    text-align:center;
+    padding:60px;
+}
+.card{
+    max-width:700px;
+    margin:auto;
+    background:#1e293b;
+    padding:30px;
+    border-radius:12px;
+}
+h1{
+    color:#22c55e;
+}
+pre{
+    text-align:left;
+    background:#111827;
+    padding:15px;
+    border-radius:8px;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h1>Unlimited AI Agent</h1>
+
+<p>Running Successfully</p>
+
+<pre>
+GET  /api/status
+GET  /api/tasks
+GET  /api/test
+
+POST /api/task
+POST /api/create_bot
+POST /api/learn
+</pre>
+
+<p>https://ai.taagc.site</p>
+
+</div>
+
+</body>
+</html>
+"""
+
+
+# ===========================
+# Main Handler
+# ===========================
+
+def handler(request):
+
+    method = request.method
+
+    path = request.path
+
+    # CORS
+    if method == "OPTIONS":
+        return response({}, 200)
+
+    # Homepage
+    if path == "/":
+        return response(html(), 200, "text/html")
+
+    # ------------------------
+    # GET
+    # ------------------------
+
+    if method == "GET":
+
+        if path == "/api/status":
+
+            return response({
+
                 "status": "success",
-                "domain": "ai.taagc.site",
+
                 "server": "Vercel",
-                "timestamp": datetime.now().isoformat(),
+
+                "domain": "ai.taagc.site",
+
+                "timestamp": datetime.utcnow().isoformat(),
+
                 "agent": {
+
                     "name": "UnlimitedAI",
+
                     "version": "2.0.0",
+
                     "state": "online",
-                    "tasks_completed": 0,
-                    "uptime": 0,
-                    "bots_created": 0,
-                    "capabilities": [
-                        "Self-learning from books and experience",
-                        "Self-repairing when errors occur",
-                        "Self-upgrading to improve performance",
-                        "Self-replicating to create new bots"
-                    ],
-                    "domains": [
-                        "Business", "Finance", "Healthcare", "Education",
-                        "Technology", "Legal", "Creative", "Real Estate",
-                        "Manufacturing", "Agriculture", "Retail",
-                        "Transportation", "Energy", "Government"
+
+                    "capabilities":[
+
+                        "Self Learning",
+
+                        "Self Repair",
+
+                        "Self Upgrade",
+
+                        "Bot Creation"
+
                     ]
+
                 }
+
             })
-        
-        elif path == '/api/tasks':
-            self._send_json({
-                "status": "success",
-                "count": 0,
-                "tasks": []
+
+        if path == "/api/tasks":
+
+            return response({
+
+                "status":"success",
+
+                "count":0,
+
+                "tasks":[]
+
             })
-        
-        elif path == '/api/test':
-            self._send_json({
-                "status": "success",
-                "message": "API is working!",
-                "path": path,
-                "timestamp": datetime.now().isoformat()
+
+        if path == "/api/test":
+
+            return response({
+
+                "status":"success",
+
+                "message":"API Working",
+
+                "time":datetime.utcnow().isoformat()
+
             })
-        
-        # ============================================
-        # DASHBOARD - Return HTML
-        # ============================================
-        elif path == '/' or path == '':
-            self._serve_dashboard()
-        
-        elif path == '/style.css':
-            self._serve_static('style.css', 'text/css')
-        
-        elif path == '/app.js':
-            self._serve_static('app.js', 'application/javascript')
-        
-        # ============================================
-        # 404 - Return JSON for API, HTML for pages
-        # ============================================
-        elif path.startswith('/api/'):
-            self._send_error(404, f"API endpoint not found: {path}")
-        
-        else:
-            self._send_error(404, f"Page not found: {path}")
-    
-    def do_POST(self):
-        """Handle POST requests"""
-        path = self.path.split('?')[0]
-        print(f"📥 POST {path}")
-        
-        if path == '/api/task':
-            try:
-                content_length = int(self.headers.get('Content-Length', 0))
-                body = self.rfile.read(content_length).decode('utf-8')
-                data = json.loads(body) if body else {}
-                
-                task = data.get('task') or data.get('description')
-                
-                if not task:
-                    self._send_error(400, "Task description is required")
-                    return
-                
-                self._send_json({
-                    "status": "success",
-                    "task": task,
-                    "result": {
-                        "success": True,
-                        "message": f"Task processed: {task}",
-                        "domain": "general",
-                        "analysis": f"AI analyzed: {task[:100]}...",
-                        "suggestions": [
-                            "Break the task into smaller steps",
-                            "Use relevant data sources",
-                            "Monitor progress regularly"
-                        ],
-                        "timestamp": datetime.now().isoformat()
-                    }
-                })
-            except json.JSONDecodeError:
-                self._send_error(400, "Invalid JSON body")
-            except Exception as e:
-                self._send_error(500, str(e))
-        
-        elif path == '/api/create_bot':
-            try:
-                content_length = int(self.headers.get('Content-Length', 0))
-                body = self.rfile.read(content_length).decode('utf-8')
-                data = json.loads(body) if body else {}
-                
-                requirements = data.get('requirements')
-                
-                if not requirements:
-                    self._send_error(400, "Bot requirements are required")
-                    return
-                
-                self._send_json({
-                    "status": "success",
-                    "bot": {
-                        "name": f"Bot_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                        "requirements": requirements,
-                        "location": data.get('location', 'local'),
-                        "created": datetime.now().isoformat(),
-                        "status": "active"
-                    }
-                })
-            except json.JSONDecodeError:
-                self._send_error(400, "Invalid JSON body")
-            except Exception as e:
-                self._send_error(500, str(e))
-        
-        elif path == '/api/learn':
-            try:
-                content_length = int(self.headers.get('Content-Length', 0))
-                body = self.rfile.read(content_length).decode('utf-8')
-                data = json.loads(body) if body else {}
-                
-                text = data.get('text')
-                
-                if not text:
-                    self._send_error(400, "Text to learn is required")
-                    return
-                
-                self._send_json({
-                    "status": "success",
-                    "message": "Learning successful",
-                    "text": text[:200] + "..." if len(text) > 200 else text,
-                    "category": data.get('category', 'general'),
-                    "source": data.get('source', 'user_input'),
-                    "timestamp": datetime.now().isoformat()
-                })
-            except json.JSONDecodeError:
-                self._send_error(400, "Invalid JSON body")
-            except Exception as e:
-                self._send_error(500, str(e))
-        
-        else:
-            self._send_error(404, f"POST endpoint not found: {path}")
-    
-    def do_OPTIONS(self):
-        """Handle CORS preflight"""
-        self.send_response(200)
-        self._send_cors_headers()
-        self.end_headers()
-    
-    # ============================================
-    # HELPERS
-    # ============================================
-    
-    def _send_cors_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-    
-    def _send_json(self, data, status=200):
-        self.send_response(status)
-        self._send_cors_headers()
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps(data, default=str).encode('utf-8'))
-    
-    def _send_error(self, code, message):
-        self._send_json({
-            "status": "error",
-            "code": code,
-            "message": message
-        }, code)
-    
-    def _serve_dashboard(self):
-        """Serve the HTML dashboard"""
+
+    # ------------------------
+    # POST
+    # ------------------------
+
+    if method == "POST":
+
         try:
-            from pathlib import Path
-            file_path = Path(__file__).parent.parent / 'public' / 'index.html'
-            if file_path.exists():
-                self.send_response(200)
-                self._send_cors_headers()
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                with open(file_path, 'rb') as f:
-                    self.wfile.write(f.read())
-            else:
-                self._send_error(404, "Dashboard not found")
+
+            body = request.get_json()
+
         except:
-            self._send_error(404, "Dashboard not found")
-    
-    def _serve_static(self, filename, content_type):
-        try:
-            from pathlib import Path
-            file_path = Path(__file__).parent.parent / 'public' / filename
-            if file_path.exists():
-                self.send_response(200)
-                self._send_cors_headers()
-                self.send_header('Content-type', content_type)
-                self.end_headers()
-                with open(file_path, 'rb') as f:
-                    self.wfile.write(f.read())
-            else:
-                self._send_error(404, f"File not found: {filename}")
-        except:
-            self._send_error(404, f"File not found: {filename}")
+
+            body = {}
+
+        if path == "/api/task":
+
+            task = body.get("task") or body.get("description")
+
+            if not task:
+
+                return response({
+
+                    "status":"error",
+
+                    "message":"Task required"
+
+                },400)
+
+            return response({
+
+                "status":"success",
+
+                "task":task,
+
+                "analysis":"Task accepted.",
+
+                "timestamp":datetime.utcnow().isoformat()
+
+            })
+
+        if path == "/api/create_bot":
+
+            requirements = body.get("requirements")
+
+            if not requirements:
+
+                return response({
+
+                    "status":"error",
+
+                    "message":"Requirements required"
+
+                },400)
+
+            return response({
+
+                "status":"success",
+
+                "bot":{
+
+                    "name":"Bot_"+datetime.utcnow().strftime("%Y%m%d%H%M%S"),
+
+                    "requirements":requirements,
+
+                    "status":"active"
+
+                }
+
+            })
+
+        if path == "/api/learn":
+
+            text = body.get("text")
+
+            if not text:
+
+                return response({
+
+                    "status":"error",
+
+                    "message":"Text required"
+
+                },400)
+
+            return response({
+
+                "status":"success",
+
+                "message":"Learning complete",
+
+                "length":len(text),
+
+                "timestamp":datetime.utcnow().isoformat()
+
+            })
+
+    return response({
+
+        "status":"error",
+
+        "code":404,
+
+        "message":"Endpoint not found"
+
+    },404)
