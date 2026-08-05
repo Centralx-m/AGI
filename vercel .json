@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "name": "unlimited-ai-agent",
   "builds": [
     {
       "src": "api/index.py",
@@ -8,33 +9,12 @@
   ],
   "routes": [
     {
-      "src": "/404.html",
-      "dest": "/404.html"
+      "src": "/api/(.*)",
+      "dest": "api/index.py"
     },
     {
       "src": "/(.*)",
       "dest": "api/index.py"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/webhook",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/webhook",
-      "schedule": "*/15 * * * *"
-    }
-  ],
-  "env": {
-    "PYTHONUNBUFFERED": "1",
-    "DOMAIN": "ai.taagc.site",
-    "PYTHON_VERSION": "3.9"
-  },
-  "functions": {
-    "api/index.py": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
+  ]
 }
